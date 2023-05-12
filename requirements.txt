@@ -1,0 +1,4 @@
+yt-dlp
+faster_whisper
+tourch
+pysubs2
