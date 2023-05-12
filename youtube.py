@@ -4,6 +4,7 @@ import yt_dlp
 import time
 import numpy as np
 import pysubs2
+import re
 
 # @param ["base","small","medium", "large-v1","large-v2"]
 model_size = "large-v2"
@@ -11,13 +12,27 @@ model_size = "large-v2"
 url = input("Please type your YouTube Video Link Here and Press Enter : ")
 
 
+def sanitize_filename(title):
+    # Remove invalid characters
+    title = re.sub(r'[\\/*?:"<>|]', '', title)
+
+    # Replace spaces with underscores
+    title = title.replace(' ', '_')
+
+    # Ensure the filename does not exceed the maximum length
+    max_length = 255
+    if len(title) > max_length:
+        title = title[:max_length]
+
+    return title
+
 video_path_local_list = []
 
 # Run on GPU with FP16
 model = WhisperModel(model_size)
 ydl_opts = {
   'format': 'm4a/bestaudio/best',
-  'outtmpl': './.tmp/%(id)s.%(ext)s',
+  'outtmpl': './tmp/%(id)s.%(ext)s',
   # ℹ️ See help(yt_dlp.postprocessor) for a list of available Postprocessors and their arguments
   'postprocessors': [{  # Extract audio using ffmpeg
     'key': 'FFmpegExtractAudio',
@@ -37,9 +52,11 @@ with yt_dlp.YoutubeDL(ydl_opts) as ydl:
     title = video_info['title']
     filename = f"{video_info['id']}.wav"
 
-input_directory = ".tmp"
+input_directory = "tmp"
 output_directory = "output"
 input_file = f"{input_directory}/{filename}"
+
+file_basename = sanitize_filename(title)
 
 # or run on GPU with INT8
 # model = WhisperModel(model_size, device="cuda", compute_type="int8_float16")
@@ -66,6 +83,6 @@ toc = time.time()
 print('识别完毕 Done')
 print(f'Time consumpution {toc-tic}s')
 
-srt_file = f"{output_directory}/{title}.srt"
+srt_file = f"{output_directory}/{file_basename}.srt"
 subs = pysubs2.load_from_whisper(results)
 subs.save(srt_file)
