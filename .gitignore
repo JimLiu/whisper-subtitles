@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 tmp
 output
+.DS_Store
